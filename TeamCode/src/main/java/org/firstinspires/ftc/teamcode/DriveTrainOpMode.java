@@ -27,6 +27,10 @@ public class DriveTrainOpMode extends LinearOpMode {
     static final double DRIVE_GEAR_REDUCTION = 19.2;
     static final double COUNTS_PER_DEGREE = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / 360;
 
+    private double driveSpeedTransformationCurve(double inputValue) {
+        return Math.pow(inputValue, 2.0);
+    }
+
     @Override
     public void runOpMode() {
 //        gyro = hardwareMap.get(Gyroscope.class, "gyro");
@@ -51,7 +55,7 @@ public class DriveTrainOpMode extends LinearOpMode {
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
         gyro.initialize(parameters);
-        reset();
+        // reset();
 //
 //
 //
@@ -78,11 +82,20 @@ public class DriveTrainOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             tgtPowerX = this.gamepad1.left_stick_x;
             tgtPowerY = -this.gamepad1.left_stick_y;
-            tgtPowerRX = this.gamepad1.right_stick_x;
+            tgtPowerRX = -this.gamepad1.right_stick_x;
             lowerArmTgtPower = this.gamepad2.left_stick_y;
             upperArmTgtPower = this.gamepad2.right_stick_y;
             lowerArmDegrees = -124 + (lowerArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
             upperArmDegrees = -34 + (upperArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
+
+// CAREFUL TESTING THIS!! this is to give us good control at slow speeds, while still being able to move fast.
+//            tgtPowerX = driveSpeedTransformationCurve(tgtPowerX);
+//            tgtPowerY = driveSpeedTransformationCurve(tgtPowerY);
+//            tgtPowerRX = driveSpeedTransformationCurve(tgtPowerRX);
+
+            telemetry.addData("lowerArmDegrees", lowerArmDegrees);
+            telemetry.addData("upperArmDegrees", upperArmDegrees);
+
 
             // check to make sure we're not moving the upper arm illegally
             if (lowerArmDegrees > -90) {
@@ -98,6 +111,7 @@ public class DriveTrainOpMode extends LinearOpMode {
             } else {
                 moveArm(lowerArmTgtPower, upperArmTgtPower);
             }
+            moveArm(lowerArmTgtPower, upperArmTgtPower);
 
             intake();
             // enable field-centric adjustments when left bumper pushed
@@ -109,26 +123,25 @@ public class DriveTrainOpMode extends LinearOpMode {
             }
             denom = Math.max(Math.abs(tgtPowerY) + Math.abs(tgtPowerX) + Math.abs(tgtPowerRX), 1);
 
-            motor1.setPower((tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
-            telemetry.addData("Target Power",(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
-            telemetry.addData("Motor1 Power", motor1.getPower());
-            telemetry.addData("Motor1 RunMode", motor1.getMode());
+            motor1.setPower(-(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
+//            telemetry.addData("Target Power",(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
+//            telemetry.addData("Motor1 Power", motor1.getPower());
+//            telemetry.addData("Motor1 RunMode", motor1.getMode());
 
-            motor2.setPower((tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom );
-            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom);
-            telemetry.addData("Motor2 Power", motor2.getPower());
-            telemetry.addData("Motor2 RunMode", motor2.getMode());
+            motor2.setPower(-(tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom );
+//            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom);
+//            telemetry.addData("Motor2 Power", motor2.getPower());
+//            telemetry.addData("Motor2 RunMode", motor2.getMode());
 
-            motor3.setPower((tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom );
-            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom);
-            telemetry.addData("Motor3 Power", motor3.getPower());
-            telemetry.addData("Motor3 RunMode", motor3.getMode());
+            motor3.setPower(-(tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom );
+//            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom);
+//            telemetry.addData("Motor3 Power", motor3.getPower());
+//            telemetry.addData("Motor3 RunMode", motor3.getMode());
 
-            motor4.setPower((tgtPowerY + tgtPowerX + -tgtPowerRX) / denom );
-            telemetry.addData("Target Power", (tgtPowerY + tgtPowerX + -tgtPowerRX) / denom);
-            telemetry.addData("Motor4 Power", motor4.getPower());
-            telemetry.addData("Motor4 RunMode", motor4.getMode());
-
+            motor4.setPower(-(tgtPowerY + tgtPowerX + -tgtPowerRX) / denom );
+//            telemetry.addData("Target Power", (tgtPowerY + tgtPowerX + -tgtPowerRX) / denom);
+//            telemetry.addData("Motor4 Power", motor4.getPower());
+//            telemetry.addData("Motor4 RunMode", motor4.getMode());
 
             telemetry.addData("Status", "Running v5");
             telemetry.update();
@@ -142,11 +155,15 @@ public class DriveTrainOpMode extends LinearOpMode {
         lowerArmMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         upperArmMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeMoter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lowerArmMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lowerArmMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        upperArmMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeMoter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     private void moveArm(double lowerArmTgtPower, double upperArmTgtPower) {
-        lowerArmMotor1.setPower(lowerArmTgtPower);
-        lowerArmMotor2.setPower(lowerArmTgtPower);
+        lowerArmMotor1.setPower(-lowerArmTgtPower);
+        lowerArmMotor2.setPower((lowerArmTgtPower));
         telemetry.addData("lower arm tgt Power", lowerArmTgtPower);
         telemetry.addData("lower arm Power", lowerArmMotor1.getPower());
         upperArmMotor1.setPower(upperArmTgtPower);
@@ -154,10 +171,11 @@ public class DriveTrainOpMode extends LinearOpMode {
         telemetry.addData("upper arm Power", upperArmMotor1.getPower());
     }
     private void intake(){
-        if(this.gamepad2.right_trigger == 0){
-            intakeMoter.setPower(-this.gamepad2.left_trigger);
+        if(this.gamepad2.left_trigger == 0){
+            intakeMoter.setPower(-this.gamepad2.right_trigger);
         } else {
-            intakeMoter.setPower(this.gamepad2.right_trigger);
+            intakeMoter.setPower(this.gamepad2.left_trigger);
+
         }
 
 
