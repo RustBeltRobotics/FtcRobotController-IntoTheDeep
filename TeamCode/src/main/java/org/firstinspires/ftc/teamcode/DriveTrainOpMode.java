@@ -27,9 +27,6 @@ public class DriveTrainOpMode extends LinearOpMode {
     static final double DRIVE_GEAR_REDUCTION = 19.2;
     static final double COUNTS_PER_DEGREE = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / 360;
 
-    private double driveSpeedTransformationCurve(double inputValue) {
-        return Math.pow(inputValue, 2.0);
-    }
 
     @Override
     public void runOpMode() {
@@ -57,6 +54,7 @@ public class DriveTrainOpMode extends LinearOpMode {
         gyro.initialize(parameters);
         // reset();
 //
+
 //
 //
 //        digitalTouch = hardwareMap.get(DigitalChannel.class, "digitalTouch");
@@ -83,20 +81,24 @@ public class DriveTrainOpMode extends LinearOpMode {
             tgtPowerX = this.gamepad1.left_stick_x;
             tgtPowerY = -this.gamepad1.left_stick_y;
             tgtPowerRX = -this.gamepad1.right_stick_x;
-            lowerArmTgtPower = this.gamepad2.left_stick_y;
-            upperArmTgtPower = this.gamepad2.right_stick_y;
+            lowerArmTgtPower = jeySteckRespencse(this.gamepad2.left_stick_y);
+            upperArmTgtPower = jeySteckRespencse(this.gamepad2.right_stick_y);
             lowerArmDegrees = -124 + (lowerArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
             upperArmDegrees = -34 + (upperArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
 
 // CAREFUL TESTING THIS!! this is to give us good control at slow speeds, while still being able to move fast.
-//            tgtPowerX = driveSpeedTransformationCurve(tgtPowerX);
-//            tgtPowerY = driveSpeedTransformationCurve(tgtPowerY);
-//            tgtPowerRX = driveSpeedTransformationCurve(tgtPowerRX);
+            tgtPowerX = jeySteckRespencse(tgtPowerX);
+            tgtPowerY = jeySteckRespencse(tgtPowerY);
+//            tgtPowerRX =
 
-            telemetry.addData("lowerArmDegrees", lowerArmDegrees);
-            telemetry.addData("upperArmDegrees", upperArmDegrees);
+            telemetry.addData("lowerArmMotor1 encoder", lowerArmMotor1.getCurrentPosition());
+            telemetry.addData("upperArm encoder", upperArmMotor1.getCurrentPosition());
 
+            // lower arm 1482
+            // upper arm -160
 
+            // lower arm 90 degrees off: 88
+            // upper arm 90 degrees off: 562
             // check to make sure we're not moving the upper arm illegally
             if (lowerArmDegrees > -90) {
                 if (lowerArmDegrees + upperArmDegrees < 90.0) {
@@ -124,24 +126,24 @@ public class DriveTrainOpMode extends LinearOpMode {
             denom = Math.max(Math.abs(tgtPowerY) + Math.abs(tgtPowerX) + Math.abs(tgtPowerRX), 1);
 
             motor1.setPower(-(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
-//            telemetry.addData("Target Power",(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
-//            telemetry.addData("Motor1 Power", motor1.getPower());
-//            telemetry.addData("Motor1 RunMode", motor1.getMode());
-
+            telemetry.addData("Target Power",(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
+            telemetry.addData("Motor1 Power", motor1.getPower());
+////            telemetry.addData("Motor1 RunMode", motor1.getMode());
+//
             motor2.setPower(-(tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom );
-//            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom);
-//            telemetry.addData("Motor2 Power", motor2.getPower());
-//            telemetry.addData("Motor2 RunMode", motor2.getMode());
-
+            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom);
+            telemetry.addData("Motor2 Power", motor2.getPower());
+////            telemetry.addData("Motor2 RunMode", motor2.getMode());
+//
             motor3.setPower(-(tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom );
-//            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom);
-//            telemetry.addData("Motor3 Power", motor3.getPower());
-//            telemetry.addData("Motor3 RunMode", motor3.getMode());
-
+            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom);
+            telemetry.addData("Motor3 Power", motor3.getPower());
+////            telemetry.addData("Motor3 RunMode", motor3.getMode());
+//
             motor4.setPower(-(tgtPowerY + tgtPowerX + -tgtPowerRX) / denom );
-//            telemetry.addData("Target Power", (tgtPowerY + tgtPowerX + -tgtPowerRX) / denom);
-//            telemetry.addData("Motor4 Power", motor4.getPower());
-//            telemetry.addData("Motor4 RunMode", motor4.getMode());
+            telemetry.addData("Target Power", (tgtPowerY + tgtPowerX + -tgtPowerRX) / denom);
+            telemetry.addData("Motor4 Power", motor4.getPower());
+////            telemetry.addData("Motor4 RunMode", motor4.getMode());
 
             telemetry.addData("Status", "Running v5");
             telemetry.update();
@@ -149,7 +151,12 @@ public class DriveTrainOpMode extends LinearOpMode {
         // shutdown code
 
     }
+    double jeySteckRespencse(double power) {
+        double a = 3.7;
+        double b = 0.43;
 
+        return (Math.signum(power)*Math.pow(Math.abs(power), a) + (power * b)) / (1 + b);
+    }
     private void reset() {
         lowerArmMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lowerArmMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
