@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.IMU;
 
+import java.util.concurrent.TimeUnit;
+
 @Autonomous(name="Standard Autonmous", group="Robot")
 
 public class StandardAutoMode extends LinearOpMode {
@@ -33,6 +35,8 @@ public class StandardAutoMode extends LinearOpMode {
     static final double     DRIVE_SPEED             = 0.6;  // ???
     static final double     TURN_SPEED              = 0.5;  // ???
     static final double COUNTS_PER_DEGREE = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / 360;
+    static final double LOWER_TICKS_PER_DEGREE = 1394 / 90;
+    static final double UPPER_TICKS_PER_DEGREE = -722 / 90;
 
     @Override
     public void runOpMode() {
@@ -60,10 +64,21 @@ public class StandardAutoMode extends LinearOpMode {
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        resetArm();
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
+        driveForward(12);
+        while(motorRunning()){}
+        turnRightContinuous(-90);
+        turnRight(-90);
+        while(motorRunning()){}
+        driveForward(24);
+        scoreInLowerBasket();
+        telemetry.update();
 
+        while(motorRunning()){}
+        while(armRunning()){}
     }
 
     public void driveForward(double inches) {
@@ -160,7 +175,7 @@ public class StandardAutoMode extends LinearOpMode {
     private void pickupSample() {
         setLowerArm(-90);
         setUpperArm(-5);
-        intake(1);
+        intake(-1);
     }
 
     // Raise arm, release sample, return arm to neutral position
@@ -170,11 +185,25 @@ public class StandardAutoMode extends LinearOpMode {
         intake(-1);
     }
 
+    // Raise arm, release sample, return arm to neutral position
+    private void scoreInLowerBasket() {
+        setLowerArm(-78);
+        setUpperArm(62);
+        while(armRunning()){}
+        intake(1);
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        intake(0);
+        stowArm();
+    }
+
     // Put arm away at the end of auto
     private void stowArm() {
-        lowerArmMotor1.setTargetPosition(0);
-        lowerArmMotor2.setTargetPosition(0);
-        upperArmMotor1.setTargetPosition(0);
+        setLowerArm(-124);
+        setUpperArm(75);
     }
 
     // Put arm in neutral position between moves
@@ -184,14 +213,34 @@ public class StandardAutoMode extends LinearOpMode {
     }
     // set lower arm to degree position provided
     private void setLowerArm(int degrees){
-        int lowerArmDegrees = -124 + (int) Math.round(lowerArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
-        lowerArmMotor1.setTargetPosition((int) (degrees * COUNTS_PER_DEGREE));
-        lowerArmMotor2.setTargetPosition((int) (degrees * COUNTS_PER_DEGREE));
+
+        degrees = degrees + 124;
+        // int lowerArmDegrees = -124 + (int) Math.round(lowerArmMotor1.getCurrentPosition() / LOWER_TICKS_PER_DEGREE);
+
+        telemetry.addData("setting lower arm degrees to ", degrees);
+        telemetry.addData("setting lower arm ticks to ", (int)(degrees * LOWER_TICKS_PER_DEGREE));
+        telemetry.addData("lowerArm at ", lowerArmMotor2.getCurrentPosition());
+
+        lowerArmMotor1.setTargetPosition((int)(degrees * LOWER_TICKS_PER_DEGREE));
+        lowerArmMotor2.setTargetPosition(-(int)(degrees * LOWER_TICKS_PER_DEGREE));
+        lowerArmMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        lowerArmMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        lowerArmMotor1.setPower(.5);
+        lowerArmMotor2.setPower(.5);
+
+        telemetry.addData("lowerArm new position ", lowerArmMotor2.getCurrentPosition());
     }
     // set upper arm to degree position provided
-    private void setUpperArm(int degrees){
-        int upperArmDegrees = -34 + (int) Math.round(upperArmMotor1.getCurrentPosition() / COUNTS_PER_DEGREE);
-        upperArmMotor1.setTargetPosition((int) (degrees * COUNTS_PER_DEGREE));
+    private void setUpperArm(double degrees){
+        degrees = degrees - 75;
+        //int upperArmDegrees = 75 + (int) Math.round(upperArmMotor1.getCurrentPosition() / UPPER_TICKS_PER_DEGREE) + degrees;
+        telemetry.addData("setting upper arm degrees to ", degrees);
+        telemetry.addData("setting upper arm ticks to ", (int)(degrees * UPPER_TICKS_PER_DEGREE));
+        telemetry.addData("upperArm at ", upperArmMotor1.getCurrentPosition());
+        upperArmMotor1.setTargetPosition((int)(degrees * UPPER_TICKS_PER_DEGREE));
+        upperArmMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        upperArmMotor1.setPower(.5);
+        telemetry.addData("upperArm new position ", upperArmMotor1.getCurrentPosition());
     }
     private void intake(int Speed){
      intakeMoter.setPower(Speed);
@@ -207,10 +256,6 @@ public class StandardAutoMode extends LinearOpMode {
         motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lowerArmMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lowerArmMotor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        upperArmMotor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
     }
 
     private boolean motorRunning() {
@@ -229,9 +274,33 @@ public class StandardAutoMode extends LinearOpMode {
         return false;
     }
 
+
+    private boolean armRunning() {
+        if(lowerArmMotor1.isBusy()) {
+            return true;
+        }
+        if(lowerArmMotor2.isBusy()) {
+            return true;
+        }
+        if(upperArmMotor1.isBusy()) {
+            return true;
+        }
+        return false;
+    }
+
     private double getYaw() {
         return gyro.getRobotYawPitchRollAngles().getYaw();
     }
 
+    private void resetArm() {
+        lowerArmMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lowerArmMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        upperArmMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeMoter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lowerArmMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        lowerArmMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        upperArmMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intakeMoter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
 
 }
