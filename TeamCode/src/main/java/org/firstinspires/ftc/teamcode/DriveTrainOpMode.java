@@ -3,14 +3,15 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @TeleOp
 
 public class DriveTrainOpMode extends LinearOpMode {
-    // private Gyroscope imu;
     private DcMotor motor1;
     private DcMotor motor2;
     private DcMotor motor3;
@@ -18,10 +19,7 @@ public class DriveTrainOpMode extends LinearOpMode {
     private DcMotor lowerArmMotor1;
     private DcMotor lowerArmMotor2;
     private DcMotor upperArmMotor1;
-    private DcMotor intakeMoter;
-    // private DigitalChannel digitalTouch;
-    // private DistanceSensor sensorColorRange;
-    // private Servo servoTest;
+    private DcMotorEx intakeMoter;
 
     // lower arm 1482
     // upper arm -160
@@ -35,7 +33,6 @@ public class DriveTrainOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-//        gyro = hardwareMap.get(Gyroscope.class, "gyro");
         motor1 = hardwareMap.get(DcMotor.class, "motor1");
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
@@ -43,7 +40,7 @@ public class DriveTrainOpMode extends LinearOpMode {
         lowerArmMotor1 = hardwareMap.get(DcMotor.class, "lam1");
         lowerArmMotor2 = hardwareMap.get(DcMotor.class, "lam2");
         upperArmMotor1 = hardwareMap.get(DcMotor.class, "uam1");
-        intakeMoter = hardwareMap.get(DcMotor.class, "iM");
+        intakeMoter = (DcMotorEx) hardwareMap.get(DcMotor.class, "iM");
         motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -58,13 +55,6 @@ public class DriveTrainOpMode extends LinearOpMode {
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
         gyro.initialize(parameters);
         reset();
-//
-
-//
-//
-//        digitalTouch = hardwareMap.get(DigitalChannel.class, "digitalTouch");
-//        sensorColorRange = hardwareMap.get(DistanceSensor.class, "sensorColorRange");
-//        servoTest = hardwareMap.get(Servo.class, "servoTest");
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -72,7 +62,6 @@ public class DriveTrainOpMode extends LinearOpMode {
         waitForStart();
 
         // run until the end of the match (driver presses STOP)
-
         double denom = 0;
         double tgtPowerY = 0;
         double tgtPowerX = 0;
@@ -155,8 +144,6 @@ public class DriveTrainOpMode extends LinearOpMode {
                         moveLowerArm(lowerArmTgtPower);
                     }
             }
-
-
             intake();
             // enable field-centric adjustments when left bumper pushed
             if (this.gamepad1.left_bumper == true) {
@@ -165,7 +152,6 @@ public class DriveTrainOpMode extends LinearOpMode {
                 tgtPowerX = tgtPowerX * 1.1;
                 telemetry.addData("Field centric", "ON");
                 telemetry.addData("botheading", botHeading);
-
             }
             if (this.gamepad2.right_bumper) {
                 reset();
@@ -180,24 +166,24 @@ public class DriveTrainOpMode extends LinearOpMode {
 //            telemetry.addData("Target Power",(tgtPowerY + tgtPowerX + tgtPowerRX) / -denom );
 //            telemetry.addData("Motor1 Power", motor1.getPower());
 ////            telemetry.addData("Motor1 RunMode", motor1.getMode());
-            telemetry.addData("motor 1 position", motor1.getCurrentPosition());
+//            telemetry.addData("motor 1 position", motor1.getCurrentPosition());
 //
             motor2.setPower(-(tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom );
 //            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + -tgtPowerRX) / denom);
 //            telemetry.addData("Motor2 Power", motor2.getPower());
 ////            telemetry.addData("Motor2 RunMode", motor2.getMode());
-            telemetry.addData("motor 2 position", motor2.getCurrentPosition());
+//            telemetry.addData("motor 2 position", motor2.getCurrentPosition());
 //
             motor3.setPower(-(tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom );
 //            telemetry.addData("Target Power", (tgtPowerY + -tgtPowerX + tgtPowerRX) / -denom);
 //            telemetry.addData("Motor3 Power", motor3.getPower());
 ////            telemetry.addData("Motor3 RunMode", motor3.getMode());
-            telemetry.addData("motor 3 position", motor3.getCurrentPosition());
+//            telemetry.addData("motor 3 position", motor3.getCurrentPosition());
 //
             motor4.setPower(-(tgtPowerY + tgtPowerX + -tgtPowerRX) / denom );
 //            telemetry.addData("Target Power", (tgtPowerY + tgtPowerX + -tgtPowerRX) / denom);
 //            telemetry.addData("Motor4 Power", motor4.getPower());
-            telemetry.addData("motor 4 position", motor4.getCurrentPosition());
+//            telemetry.addData("motor 4 position", motor4.getCurrentPosition());
 ////            telemetry.addData("Motor4 RunMode", motor4.getMode());
 
             telemetry.addData("Status", "Running v6");
@@ -253,6 +239,7 @@ public class DriveTrainOpMode extends LinearOpMode {
             intakeMoter.setPower(this.gamepad2.left_trigger);
 
         }
+        telemetry.addData("intake current: ", intakeMoter.getCurrent(CurrentUnit.MILLIAMPS));
     }
 
     private boolean isUpperArmLegal(double lowerArmDegrees, double upperArmDegrees) {
