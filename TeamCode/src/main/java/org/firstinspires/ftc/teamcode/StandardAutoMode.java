@@ -68,15 +68,20 @@ public class StandardAutoMode extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
+        // RUN OUR AUTO ROUTINE --------------------------------------------------------
         driveForward(12);
         while(motorRunning()){}
         turnRightContinuous(-90);
+        while(motorRunning()){}
         turnRight(-90);
+        while(motorRunning()){}
+        turnRightNoIMU(90);
         while(motorRunning()){}
         driveForward(24);
         scoreInLowerBasket();
+        driveForward(-24);
         telemetry.update();
-
+        // END OUR AUTO ROUTINE --------------------------------------------------------
         while(motorRunning()){}
         while(armRunning()){}
     }
@@ -96,10 +101,10 @@ public class StandardAutoMode extends LinearOpMode {
         motor2.setPower(1);
         motor3.setPower(1);
         motor4.setPower(1);
-        }
-    public void turnRight(int degrees) {
-       /* while(motorRunning()){}
-         //int ticks = (int) Math.round(degrees * (7.113544266 * 2) );
+    }
+
+    public void turnRightNoIMU(int degrees) {
+        while(motorRunning()){}
         int ticks = (int) Math.round(degrees * (117) );
         telemetry.addData("turning", degrees);
         telemetry.update();
@@ -113,11 +118,13 @@ public class StandardAutoMode extends LinearOpMode {
         motor2.setPower(.5);
         motor3.setPower(.5);
         motor4.setPower(.5);
-    */
+    }
+
+    public void turnRight(int degrees) {
         while(motorRunning()){}
         gyro.resetYaw();
         degrees = degrees-2;
-        while (Math.abs(getYaw()) < degrees  ) {
+        while (Math.abs(getYaw()) < Math.abs(degrees)) {
             reset();
             int ticks = 140;
             telemetry.addData("turning -> D: ", getYaw());
@@ -152,7 +159,7 @@ public class StandardAutoMode extends LinearOpMode {
             motor3.setPower(.05);
             motor4.setPower(.05);
         while(motorRunning()){
-            if(Math.abs(getYaw()) >= degrees  ) {
+            if(Math.abs(getYaw()) >= Math.abs(degrees)) {
                 telemetry.addData("turning COMPLETE :D", getYaw());
                 telemetry.update();
                 reset();
